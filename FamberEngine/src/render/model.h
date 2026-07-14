@@ -9,23 +9,24 @@
 static const char* M_VERT =
     "#version 120\n"
     "attribute vec3 aPos; attribute vec3 aNor; attribute vec2 aUV;\n"
-    "uniform mat4 uMVP;\n"
+    "uniform mat4 uMVP; uniform mat4 uModel;\n"
     "varying vec3 vNor; varying vec2 vUV;\n"
-    "void main(){ vNor=aNor; vUV=aUV; gl_Position=uMVP*vec4(aPos,1.0); }\n";
+    "void main(){ vNor=mat3(uModel)*aNor; vUV=aUV;\n"
+    "  gl_Position=uMVP*(uModel*vec4(aPos,1.0)); }\n";
 
 static const char* M_FRAG =
     "#version 120\n"
     "uniform sampler2D uTex; uniform vec3 uLightDir;\n"
     "varying vec3 vNor; varying vec2 vUV;\n"
     "void main(){\n"
-    "  float d=max(dot(normalize(vNor),-uLightDir),0.0)*0.55+0.6;\n"
+    "  float d=max(dot(normalize(vNor),-uLightDir),0.0)*0.45+0.42;\n"
     "  vec3 c=texture2D(uTex,vUV).rgb*d;\n"
     "  gl_FragColor=vec4(c,1.0);\n"
     "}\n";
 
 struct ModelGL {
     GLuint prog = 0, vbo = 0;
-    GLint uMVP = -1, uTex = -1, uLight = -1, aPos = -1, aNor = -1, aUV = -1;
+    GLint uMVP = -1, uModel = -1, uTex = -1, uLight = -1, aPos = -1, aNor = -1, aUV = -1;
     std::vector<GLuint> texIds;
     struct Range { int start, count; GLuint tex; };
     std::vector<Range> ranges;
@@ -39,6 +40,7 @@ struct ModelGL {
         glAttachShader(prog, vs); glAttachShader(prog, fs); glLinkProgram(prog);
         glDeleteShader(vs); glDeleteShader(fs);
         uMVP = glGetUniformLocation(prog, "uMVP");
+        uModel = glGetUniformLocation(prog, "uModel");
         uTex = glGetUniformLocation(prog, "uTex");
         uLight = glGetUniformLocation(prog, "uLightDir");
         aPos = glGetAttribLocation(prog, "aPos");
@@ -81,10 +83,11 @@ struct ModelGL {
                      all.empty() ? nullptr : all.data(), GL_STATIC_DRAW);
     }
 
-    void draw(const Mat4& mvp, const Vec3& lightDir) {
+    void draw(const Mat4& mvp, const Vec3& lightDir, const Mat4& model = mat4Identity()) {
         glEnable(GL_DEPTH_TEST); glDepthFunc(GL_LESS); glDisable(GL_CULL_FACE);
         glUseProgram(prog);
         glUniformMatrix4fv(uMVP, 1, GL_FALSE, mvp.m);
+        glUniformMatrix4fv(uModel, 1, GL_FALSE, model.m);
         glUniform1i(uTex, 0);
         Vec3 ld = normalize(lightDir);
         glUniform3fv(uLight, 1, &ld.x);

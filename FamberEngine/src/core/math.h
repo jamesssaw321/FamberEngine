@@ -54,6 +54,35 @@ inline Mat4 mat4Mul(const Mat4& a, const Mat4& b) {
         }
     return r;
 }
+inline Mat4 mat4Translate(const Vec3& t) {
+    Mat4 r = mat4Identity();
+    r.m[12] = t.x; r.m[13] = t.y; r.m[14] = t.z;
+    return r;
+}
+inline Mat4 mat4RotZ(float deg) {
+    float a = deg * 3.14159265f / 180.0f;
+    float c = std::cos(a), s = std::sin(a);
+    Mat4 r = mat4Identity();
+    r.m[0] = c; r.m[1] = s;
+    r.m[4] = -s; r.m[5] = c;
+    return r;
+}
+inline Mat4 mat4RotX(float deg) {
+    float a = deg * 3.14159265f / 180.0f;
+    float c = std::cos(a), s = std::sin(a);
+    Mat4 r = mat4Identity();
+    r.m[5] = c; r.m[6] = s;
+    r.m[9] = -s; r.m[10] = c;
+    return r;
+}
+inline Mat4 mat4RotY(float deg) {
+    float a = deg * 3.14159265f / 180.0f;
+    float c = std::cos(a), s = std::sin(a);
+    Mat4 r = mat4Identity();
+    r.m[0] = c; r.m[2] = -s;
+    r.m[8] = s; r.m[10] = c;
+    return r;
+}
 inline Mat4 mat4Perspective(float fovyRad, float aspect, float znear, float zfar) {
     Mat4 r{};
     for (int i = 0; i < 16; i++) r.m[i] = 0;

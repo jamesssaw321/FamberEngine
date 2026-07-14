@@ -12,16 +12,37 @@ static HDC   hdc = nullptr;
 static HGLRC hglrc = nullptr;
 static int   W = 1280, H = 720;
 static bool  run = true, act = false, cursorHidden = false;
+static bool  escQuits = true;         // console turns this off while open
 static POINT center{};
+static std::vector<unsigned> charQ;   // WM_CHAR (text input, with autorepeat)
+static std::vector<int> keyQ;         // WM_KEYDOWN vks (no autorepeat)
 
 inline LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
         case WM_CLOSE: case WM_DESTROY: run = false; return 0;
         case WM_SIZE: W = LOWORD(lp); H = HIWORD(lp); return 0;
         case WM_ACTIVATEAPP: act = (wp != FALSE); return 0;
-        case WM_KEYDOWN: if (wp == VK_ESCAPE) run = false; return 0;
+        case WM_CHAR:
+            if (charQ.size() < 256) charQ.push_back((unsigned)wp);
+            return 0;
+        case WM_KEYDOWN:
+            if (wp == VK_ESCAPE && escQuits) { run = false; return 0; }
+            if (!(lp & (1 << 30)) && keyQ.size() < 256) keyQ.push_back((int)wp);
+            return 0;
     }
     return DefWindowProc(h, msg, wp, lp);
+}
+
+inline bool nextChar(unsigned& c) {
+    if (charQ.empty()) return false;
+    c = charQ.front(); charQ.erase(charQ.begin());
+    return true;
+}
+
+inline bool nextKey(int& vk) {
+    if (keyQ.empty()) return false;
+    vk = keyQ.front(); keyQ.erase(keyQ.begin());
+    return true;
 }
 
 inline bool init(int w, int h, const char* title) {
@@ -68,6 +89,10 @@ inline void recenter() {
     POINT c = {(rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2};
     ClientToScreen(hwnd, &c);
     center = c; SetCursorPos(c.x, c.y);
+}
+
+inline void releaseCursor() {
+    if (cursorHidden) { ShowCursor(TRUE); cursorHidden = false; }
 }
 
 // Relative mouse look; hides & recenters cursor while the window is active.

@@ -20,10 +20,13 @@ PFN_glBufferData              glBufferData = nullptr;
 PFN_glGetAttribLocation       glGetAttribLocation = nullptr;
 PFN_glVertexAttribPointer     glVertexAttribPointer = nullptr;
 PFN_glEnableVertexAttribArray glEnableVertexAttribArray = nullptr;
+PFN_glDisableVertexAttribArray glDisableVertexAttribArray = nullptr;
 PFN_glGetUniformLocation      glGetUniformLocation = nullptr;
 PFN_glUniformMatrix4fv        glUniformMatrix4fv = nullptr;
 PFN_glUniform3fv              glUniform3fv = nullptr;
 PFN_glUniform1f               glUniform1f = nullptr;
+PFN_glUniform2f               glUniform2f = nullptr;
+PFN_glUniform3f               glUniform3f = nullptr;
 PFN_glUniform1i               glUniform1i = nullptr;
 PFN_glActiveTexture           glActiveTexture = nullptr;
 
@@ -61,10 +64,13 @@ bool loadGL() {
     glGetAttribLocation       = (PFN_glGetAttribLocation)L("glGetAttribLocation");
     glVertexAttribPointer     = (PFN_glVertexAttribPointer)L("glVertexAttribPointer");
     glEnableVertexAttribArray = (PFN_glEnableVertexAttribArray)L("glEnableVertexAttribArray");
+    glDisableVertexAttribArray = (PFN_glDisableVertexAttribArray)L("glDisableVertexAttribArray");
     glGetUniformLocation      = (PFN_glGetUniformLocation)L("glGetUniformLocation");
     glUniformMatrix4fv        = (PFN_glUniformMatrix4fv)L("glUniformMatrix4fv");
     glUniform3fv              = (PFN_glUniform3fv)L("glUniform3fv");
     glUniform1f               = (PFN_glUniform1f)L("glUniform1f");
+    glUniform2f               = (PFN_glUniform2f)L("glUniform2f");
+    glUniform3f               = (PFN_glUniform3f)L("glUniform3f");
     glUniform1i               = (PFN_glUniform1i)L("glUniform1i");
     glActiveTexture           = (PFN_glActiveTexture)L("glActiveTexture");
     return ok;

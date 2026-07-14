@@ -14,6 +14,9 @@ struct Player {
     Vec3 velocity{0, 0, 0};
     float pitch = 0, yaw = 0;
     bool onground = false;
+    bool noclip = false;
+    bool onLadder = false; // set by the game from func_ladder volumes
+    bool inWater = false;  // set by the game from water contents
     Vec3 mins{-16, -16, 0};
     Vec3 maxs{16, 16, 72};
 };
@@ -22,18 +25,19 @@ struct MoveInput {
     float forward = 0;
     float side = 0;
     bool jump = false;
+    bool use = false; // +use (E): buttons
 };
 
-namespace pm {
-const float GRAVITY = 800.0f;
-const float MAXSPEED = 320.0f;
-const float ACCEL = 10.0f;
-const float AIRACCEL = 10.0f;
-const float FRICTION = 4.0f;
-const float STOPSPEED = 100.0f;
-const float STEPSIZE = 18.0f;
-const float JUMP = 268.0f;
-const float MAX_AIR_WISH = 30.0f;
+namespace pm { // mutable so the console can bind cvars to them
+inline float GRAVITY = 800.0f;
+inline float MAXSPEED = 320.0f;
+inline float ACCEL = 10.0f;
+inline float AIRACCEL = 10.0f;
+inline float FRICTION = 4.0f;
+inline float STOPSPEED = 100.0f;
+inline float STEPSIZE = 18.0f;
+inline float JUMP = 268.0f;
+inline float MAX_AIR_WISH = 30.0f;
 }
 
 inline bool onFloorTrace(const Player& p, const TraceFn& trace) {
@@ -106,6 +110,40 @@ inline void PM_StepSlide(Player& p, float dt, const TraceFn& trace) {
 }
 
 inline void PM_Move(Player& p, const MoveInput& in, float dt, const TraceFn& trace) {
+    if (p.noclip) { // fly where you look, no collision
+        Vec3 fwd, right;
+        angleVectors(p.pitch, p.yaw, &fwd, &right, nullptr);
+        Vec3 wish = fwd * in.forward + right * in.side;
+        if (in.jump) wish.z += 1.0f;
+        float l = length(wish);
+        p.velocity = l > 1e-4f ? wish * (pm::MAXSPEED * 2.0f / l) : Vec3{0, 0, 0};
+        p.origin += p.velocity * dt;
+        p.onground = false;
+        return;
+    }
+    if (p.onLadder) { // climb: move where you look, no gravity
+        Vec3 fwd, right;
+        angleVectors(p.pitch, p.yaw, &fwd, &right, nullptr);
+        p.velocity = fwd * (in.forward * 160.0f) + right * (in.side * 160.0f);
+        if (in.jump) p.velocity += fwd * -180.0f; // push off
+        p.onground = false;
+        PM_SlideMove(p, dt, trace);
+        return;
+    }
+
+    if (p.inWater) { // swim: 3D wish direction, drag, slight sink
+        Vec3 fwd, right;
+        angleVectors(p.pitch, p.yaw, &fwd, &right, nullptr);
+        Vec3 wish = fwd * (in.forward * pm::MAXSPEED * 0.7f) +
+                    right * (in.side * pm::MAXSPEED * 0.7f);
+        if (in.jump) wish.z += 160.0f;
+        p.velocity += (wish - p.velocity) * clampf(6.0f * dt, 0, 1);
+        p.velocity.z -= 40.0f * dt;
+        p.onground = false;
+        PM_StepSlide(p, dt, trace); // step lets you climb out at the edge
+        return;
+    }
+
     p.onground = onFloorTrace(p, trace);
 
     if (in.jump && p.onground) { p.velocity.z = pm::JUMP; p.onground = false; }

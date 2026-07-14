@@ -13,6 +13,7 @@ typedef ptrdiff_t GLintptr;
 #define GL_LINK_STATUS     0x8B82
 #define GL_ARRAY_BUFFER    0x8892
 #define GL_STATIC_DRAW     0x88E4
+#define GL_STREAM_DRAW     0x88E0
 #define GL_TEXTURE0        0x84C0
 #define GL_TEXTURE1        0x84C1
 #define GL_CLAMP_TO_EDGE   0x812F
@@ -35,10 +36,13 @@ typedef void   (APIENTRY* PFN_glBufferData)(GLenum, GLsizeiptr, const void*, GLe
 typedef GLint  (APIENTRY* PFN_glGetAttribLocation)(GLuint, const GLchar*);
 typedef void   (APIENTRY* PFN_glVertexAttribPointer)(GLuint, GLint, GLenum, GLboolean, GLsizei, const void*);
 typedef void   (APIENTRY* PFN_glEnableVertexAttribArray)(GLuint);
+typedef void   (APIENTRY* PFN_glDisableVertexAttribArray)(GLuint);
 typedef GLint  (APIENTRY* PFN_glGetUniformLocation)(GLuint, const GLchar*);
 typedef void   (APIENTRY* PFN_glUniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfloat*);
 typedef void   (APIENTRY* PFN_glUniform3fv)(GLint, GLsizei, const GLfloat*);
 typedef void   (APIENTRY* PFN_glUniform1f)(GLint, GLfloat);
+typedef void   (APIENTRY* PFN_glUniform2f)(GLint, GLfloat, GLfloat);
+typedef void   (APIENTRY* PFN_glUniform3f)(GLint, GLfloat, GLfloat, GLfloat);
 typedef void   (APIENTRY* PFN_glUniform1i)(GLint, GLint);
 typedef void   (APIENTRY* PFN_glActiveTexture)(GLenum);
 
@@ -60,10 +64,13 @@ extern PFN_glBufferData              glBufferData;
 extern PFN_glGetAttribLocation       glGetAttribLocation;
 extern PFN_glVertexAttribPointer     glVertexAttribPointer;
 extern PFN_glEnableVertexAttribArray glEnableVertexAttribArray;
+extern PFN_glDisableVertexAttribArray glDisableVertexAttribArray;
 extern PFN_glGetUniformLocation      glGetUniformLocation;
 extern PFN_glUniformMatrix4fv        glUniformMatrix4fv;
 extern PFN_glUniform3fv              glUniform3fv;
 extern PFN_glUniform1f               glUniform1f;
+extern PFN_glUniform2f               glUniform2f;
+extern PFN_glUniform3f               glUniform3f;
 extern PFN_glUniform1i               glUniform1i;
 extern PFN_glActiveTexture           glActiveTexture;
 

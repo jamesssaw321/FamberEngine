@@ -1,6 +1,7 @@
 // GoldSrc studiomodel (.mdl) loader: bones, skinned meshes, palette skins,
 // and posing from a sequence's animation (bone quats per frame).
 #pragma once
+#include "../core/files.h"
 #include "../core/math.h"
 #include <cstdio>
 #include <cstdint>
@@ -70,6 +71,10 @@ struct Mdl {
     std::vector<char> texData;       // optional <name>T.mdl
     bool load(const char* path);
     void pose(int seq, float frame); // rebuild verts for a frame
+
+    int seqCount() const;
+    const char* seqLabel(int i) const;
+    float seqFps(int i) const;
 };
 
 // ---- bone math (3x4 matrices, quaternions) ----
@@ -129,11 +134,10 @@ inline float animValue(const mstudioanim_t* anim, int frame, int dof, float scal
 }
 
 inline bool Mdl::load(const char* path) {
-    FILE* f = fopen(path, "rb");
-    if (!f) { printf("[mdl] cannot open %s\n", path); return false; }
-    fseek(f, 0, SEEK_END); long n = ftell(f); fseek(f, 0, SEEK_SET);
-    data.resize(n); if (fread(data.data(), 1, n, f) != (size_t)n) { fclose(f); return false; }
-    fclose(f);
+    if (!fs::read(path, data) || data.size() < sizeof(studiohdr_t)) {
+        printf("[mdl] cannot open %s\n", path);
+        return false;
+    }
 
     const studiohdr_t* h = (const studiohdr_t*)data.data();
     if (h->id != 0x54534449) { printf("[mdl] bad id\n"); return false; } // "IDST"
@@ -145,11 +149,9 @@ inline bool Mdl::load(const char* path) {
         std::string tp = path;
         size_t dot = tp.rfind(".mdl");
         if (dot != std::string::npos) tp = tp.substr(0, dot) + "T.mdl";
-        FILE* tf = fopen(tp.c_str(), "rb");
-        if (tf) {
-            fseek(tf, 0, SEEK_END); long tn = ftell(tf); fseek(tf, 0, SEEK_SET);
-            texData.resize(tn); size_t rd = fread(texData.data(), 1, tn, tf); fclose(tf);
-            (void)rd; texbase = texData.data(); th = (const studiohdr_t*)texData.data();
+        if (fs::read(tp, texData) && texData.size() >= sizeof(studiohdr_t)) {
+            texbase = texData.data();
+            th = (const studiohdr_t*)texData.data();
         }
     }
     for (int i = 0; i < th->numtextures; i++) {
@@ -192,6 +194,23 @@ inline bool Mdl::load(const char* path) {
     printf("[mdl] loaded %s: %d bones, %d textures, %d verts, %d frames\n",
            path, h->numbones, (int)textures.size(), (int)verts.size(), numframes);
     return true;
+}
+
+inline int Mdl::seqCount() const {
+    return data.empty() ? 0 : ((const studiohdr_t*)data.data())->numseq;
+}
+
+inline const char* Mdl::seqLabel(int i) const {
+    if (i < 0 || i >= seqCount()) return "";
+    const studiohdr_t* h = (const studiohdr_t*)data.data();
+    return ((const mstudioseqdesc_t*)(data.data() + h->seqindex) + i)->label;
+}
+
+inline float Mdl::seqFps(int i) const {
+    if (i < 0 || i >= seqCount()) return 10;
+    const studiohdr_t* h = (const studiohdr_t*)data.data();
+    float f = ((const mstudioseqdesc_t*)(data.data() + h->seqindex) + i)->fps;
+    return f > 0 ? f : 10;
 }
 
 inline void Mdl::pose(int seq, float frame) {
